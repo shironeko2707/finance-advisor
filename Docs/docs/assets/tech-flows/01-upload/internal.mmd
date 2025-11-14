@@ -1,0 +1,43 @@
+flowchart LR
+ subgraph Backend["Backend"]
+        C["Upload Controller"]
+        D["User Session"]
+        E["File Validator"]
+        F["File Service"]
+        G["Encryption Module"]
+        H["Storage Provider"]
+        I["Database"]
+        J["Audit Logger"]
+  end
+ subgraph Frontend["Frontend"]
+        B["Web"]
+  end
+    A["User"] -- Chọn file và nhấn Upload --> B
+    B -- Gửi file qua HTTP API --> C
+    C -- Xác thực phiên làm việc --> D
+    D -- Trả về thông tin userId --> C
+    C -- Kiểm tra định dạng/kích thước --> E
+    E -- Trả kết quả kiểm tra --> C
+    C -- Nếu file hợp lệ --> F
+    F -- Mã hóa file --> G
+    G -- Trả file đã mã hóa --> F
+    F -- Lưu file đã mã hóa --> H
+    H -- Trả fileId --> F
+    F -- Tạo metadata file --> I
+    F -- Trả kết quả lưu file --> C
+    C -- Ghi log upload thành công --> J
+    J -- Lưu log --> I
+    C -- Nếu file lỗi --x J
+    J -- Lưu log lỗi --> I
+    C -- Trả kết quả  về WebApp --> B
+    B -- Hiển thị trạng thái cho người dùng --> A
+
+     D:::Pine
+     E:::Aqua
+     F:::Pine
+     J:::Rose
+    classDef Aqua stroke-width:1px, stroke-dasharray:none, stroke:#46EDC8, fill:#DEFFF8, color:#378E7A
+    classDef Rose stroke-width:1px, stroke-dasharray:none, stroke:#FF5978, fill:#FFDFE5, color:#8E2236
+    classDef Pine stroke-width:1px, stroke-dasharray:none, stroke:#254336, fill:#27654A, color:#FFFFFF
+
+

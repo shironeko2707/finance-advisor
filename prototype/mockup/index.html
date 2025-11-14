@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kheng Leong Co. - Document Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <div class="logo-icon">庆隆</div>
+                        <div class="logo-text">KHENG LEONG CO.</div>
+                    </div>
+                    <h1>Sign In</h1>
+                    <p>Please sign in to your account</p>
+                </div>
+                
+                <form id="loginForm" class="login-form">
+                    <div id="loginError" class="error-message hidden"></div>
+                    
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <div class="input-group">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="loginUsername" name="username" placeholder="Enter your username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="input-group">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="loginPassword" name="password" placeholder="Enter your password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rememberMe">
+                            <span class="checkmark"></span>
+                            Remember me
+                        </label>
+                        <a href="#" class="forgot-password">Forgot password?</a>
+                    </div>
+                    
+                    <button type="submit" class="login-btn">
+                        <span id="loginBtnText">Sign In</span>
+                        <div id="loginLoading" class="loading-spinner hidden"></div>
+                    </button>
+                </form>
+                
+                <div class="demo-info">
+                    <p><strong>Demo Accounts:</strong></p>
+                    <p>Admin: <code>admin</code> / <code>admin123</code></p>
+                    <p>User: <code>hoangpt</code> / <code>password</code></p>
+                    <p>Manager: <code>jason.derulo</code> / <code>manager123</code></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="main-app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">庆隆</div>
+                    <div class="logo-text">KHENG LEONG CO.</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span class="current-time" id="currentTime"></span>
+                    <div class="user-dropdown" onclick="toggleUserMenu()">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name" id="headerUserName">Jason Derulo</span>
+                            <span class="user-role" id="headerUserRole">Administrator</span>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        
+                        <!-- User Dropdown Menu -->
+                        <div id="userDropdownMenu" class="user-dropdown-menu hidden">
+                            <div class="dropdown-header">
+                                <div class="dropdown-avatar">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="dropdown-info">
+                                    <span class="dropdown-name" id="dropdownUserName">Jason Derulo</span>
+                                    <span class="dropdown-email" id="dropdownUserEmail">jason.derulo@kheng-leong.com</span>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="showUserProfile()">
+                                <i class="fas fa-user"></i>
+                                <span>Profile Settings</span>
+                            </a>
+                            <a href="#" class="dropdown-item" onclick="showUserPreferences()">
+                                <i class="fas fa-cog"></i>
+                                <span>Preferences</span>
+                            </a>
+                            <a href="#" class="dropdown-item" onclick="showHelp()">
+                                <i class="fas fa-question-circle"></i>
+                                <span>Help & Support</span>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item logout-item" onclick="logout()">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Sign Out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3 class="section-title">General management</h3>
+                    <ul class="sidebar-menu">
+                        <li class="menu-item active" onclick="showPage('reports')">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Reports management</span>
+                        </li>
+                        <li class="menu-item" onclick="showPage('templates')">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Templates management</span>
+                        </li>
+                        <li class="menu-item" onclick="showPage('files')">
+                            <i class="fas fa-upload"></i>
+                            <span>Uploaded files management</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="sidebar-section" id="userManagementSection">
+                    <h3 class="section-title">User management</h3>
+                    <ul class="sidebar-menu">
+                        <li class="menu-item" onclick="showPage('users')">
+                            <i class="fas fa-users"></i>
+                            <span>Users management</span>
+                        </li>
+                        <li class="menu-item" onclick="showPage('roles')">
+                            <i class="fas fa-user-tag"></i>
+                            <span>Roles & Permissions</span>
+                        </li>
+                        <li class="menu-item" onclick="showPage('audit')">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span>Audit Logs</span>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Reports Page -->
+                <div id="reportsPage" class="page active">
+                    <!-- Breadcrumb -->
+                    <div class="breadcrumb">
+                        <span>General management</span>
+                        <span class="separator">/</span>
+                        <span>Reports management</span>
+                    </div>
+
+                    <!-- Page Title -->
+                    <h1 class="page-title">Create new report</h1>
+
+                    <!-- Form Container -->
+                    <div class="form-container">
+                        <!-- Report Configuration Row -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Report name <span class="required">*</span></label>
+                                <input type="text" class="form-input" value="Company report 8/2025" placeholder="Enter report name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Select output template <span class="required">*</span></label>
+                                <div class="select-group">
+                                    <select class="form-select">
+                                        <option>Company report</option>
+                                        <option>Financial report</option>
+                                        <option>Monthly report</option>
+                                    </select>
+                                    <button class="template-preview-btn">Template Preview</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input Files Section -->
+                        <div class="form-section">
+                            <label class="form-label">Input file(s) <span class="required">*</span></label>
+                            
+                            <!-- File Upload Area -->
+                            <div class="upload-section">
+                                <div class="upload-header">
+                                    <span class="upload-title">File(s) upload</span>
+                                    <span class="upload-subtitle">Add your documents here</span>
+                                </div>
+                                
+                                <div class="upload-dropzone" id="uploadDropzone">
+                                    <div class="upload-content">
+                                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                        <p class="upload-text">Drag your file(s) to start uploading</p>
+                                        <p class="upload-or">OR</p>
+                                        <button class="browse-btn" type="button">Browse files</button>
+                                        <input type="file" id="fileInput" multiple accept=".pdf,.xlsx,.xls,.xlsx" hidden>
+                                    </div>
+                                </div>
+                                
+                                <p class="file-info">Only support .pdf, .xlsx, .xls, .xlsx files</p>
+                                
+                                <!-- Uploaded Files List -->
+                                <div class="uploaded-files" id="uploadedFiles">
+                                    <div class="file-item">
+                                        <div class="file-info-left">
+                                            <i class="fas fa-file-excel file-icon"></i>
+                                            <div class="file-details">
+                                                <span class="file-name">Company reports.xlsx</span>
+                                                <span class="file-size">1.5MB</span>
+                                            </div>
+                                        </div>
+                                        <div class="file-actions">
+                                            <i class="fas fa-check-circle success-icon"></i>
+                                            <i class="fas fa-trash delete-icon"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="file-item">
+                                        <div class="file-info-left">
+                                            <i class="fas fa-file-excel file-icon"></i>
+                                            <div class="file-details">
+                                                <span class="file-name">Company reports.xlsx</span>
+                                                <span class="file-size">1.5MB</span>
+                                            </div>
+                                        </div>
+                                        <div class="file-actions">
+                                            <i class="fas fa-check-circle success-icon"></i>
+                                            <i class="fas fa-trash delete-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Or Choose From Section -->
+                            <div class="choose-from-section">
+                                <div class="choose-header">
+                                    <span class="choose-title">Or choose from</span>
+                                    <span class="choose-subtitle">Uploaded input file</span>
+                                </div>
+                                
+                                <div class="search-dropdown">
+                                    <select class="form-select">
+                                        <option>Type to search...</option>
+                                        <option>Company reports.xlsx</option>
+                                        <option>Financial data.xlsx</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="selected-file">
+                                    <div class="file-item">
+                                        <div class="file-info-left">
+                                            <i class="fas fa-file-excel file-icon"></i>
+                                            <div class="file-details">
+                                                <span class="file-name">Company reports.xlsx</span>
+                                                <span class="file-size">1.5MB</span>
+                                            </div>
+                                        </div>
+                                        <div class="file-actions">
+                                            <i class="fas fa-check-circle success-icon"></i>
+                                            <i class="fas fa-trash delete-icon"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generate Button -->
+                        <button class="generate-btn" id="generateBtn">Generate report</button>
+
+                        <!-- Processing Status -->
+                        <div class="processing-status hidden" id="processingStatus">
+                            <div class="status-card">
+                                <div class="status-header">
+                                    <div class="status-info">
+                                        <h3 class="status-title">Company report 8/2025</h3>
+                                        <p class="status-details">50% • Generating • 30 seconds remaining</p>
+                                    </div>
+                                    <div class="status-actions">
+                                        <button class="status-btn error-btn">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <button class="status-btn view-btn">View</button>
+                                        <button class="status-btn download-btn">Download</button>
+                                    </div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 50%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Management Page -->
+                <div id="usersPage" class="page">
+                    <div class="breadcrumb">
+                        <span>User management</span>
+                        <span class="separator">/</span>
+                        <span>Users management</span>
+                    </div>
+
+                    <div class="page-header">
+                        <h1 class="page-title">Users Management</h1>
+                        <button class="btn btn-primary" onclick="showAddUserModal()">
+                            <i class="fas fa-plus"></i>
+                            Add New User
+                        </button>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="table-container">
+                        <div class="table-header">
+                            <div class="table-controls">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" placeholder="Search users..." id="userSearch">
+                                </div>
+                                <div class="filter-box">
+                                    <select id="roleFilter">
+                                        <option value="">All Roles</option>
+                                        <option value="admin">Administrator</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <table class="users-table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll">
+                                    </th>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Users will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Templates Page -->
+                <div id="templatesPage" class="page">
+                    <div class="breadcrumb">
+                        <span>General management</span>
+                        <span class="separator">/</span>
+                        <span>Templates management</span>
+                    </div>
+                    <h1 class="page-title">Templates Management</h1>
+                    <div class="empty-state">
+                        <i class="fas fa-file-alt"></i>
+                        <h3>Templates Management</h3>
+                        <p>Manage your report templates here</p>
+                    </div>
+                </div>
+
+                <!-- Files Page -->
+                <div id="filesPage" class="page">
+                    <div class="breadcrumb">
+                        <span>General management</span>
+                        <span class="separator">/</span>
+                        <span>Uploaded files management</span>
+                    </div>
+                    <h1 class="page-title">Uploaded Files Management</h1>
+                    <div class="empty-state">
+                        <i class="fas fa-upload"></i>
+                        <h3>Files Management</h3>
+                        <p>Manage your uploaded files here</p>
+                    </div>
+                </div>
+
+                <!-- Roles Page -->
+                <div id="rolesPage" class="page">
+                    <div class="breadcrumb">
+                        <span>User management</span>
+                        <span class="separator">/</span>
+                        <span>Roles & Permissions</span>
+                    </div>
+                    <h1 class="page-title">Roles & Permissions</h1>
+                    <div class="empty-state">
+                        <i class="fas fa-user-tag"></i>
+                        <h3>Roles & Permissions</h3>
+                        <p>Manage user roles and permissions here</p>
+                    </div>
+                </div>
+
+                <!-- Audit Page -->
+                <div id="auditPage" class="page">
+                    <div class="breadcrumb">
+                        <span>User management</span>
+                        <span class="separator">/</span>
+                        <span>Audit Logs</span>
+                    </div>
+                    <h1 class="page-title">Audit Logs</h1>
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h3>Audit Logs</h3>
+                        <p>View system audit logs and user activities here</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeAddUserModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <button class="modal-close" onclick="closeAddUserModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="addUserForm" class="modal-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name <span class="required">*</span></label>
+                        <input type="text" id="firstName" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name <span class="required">*</span></label>
+                        <input type="text" id="lastName" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Username <span class="required">*</span></label>
+                    <input type="text" id="newUsername" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" id="email" class="form-input" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Role <span class="required">*</span></label>
+                        <select id="role" class="form-select" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Administrator</option>
+                            <option value="manager">Manager</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="status" class="form-select">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Temporary Password <span class="required">*</span></label>
+                    <div class="input-group">
+                        <input type="password" id="tempPassword" class="form-input" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('tempPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddUserModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

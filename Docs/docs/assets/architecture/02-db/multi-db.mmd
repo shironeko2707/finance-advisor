@@ -1,0 +1,12 @@
+---
+config:
+  look: handDrawn
+---
+flowchart TD
+    C["Cache<br>Database<br>Redis"] --> D["Vector DB"] & F["ML Models<br>Blob<br>Storage"]
+    A["Application<br>Database<br>PostgreSQL"]
+    B["Audit<br>Database<br>PostgreSQL"]
+     A:::Rose
+     B:::Rose
+    classDef Rose stroke-width:1px, stroke-dasharray:none, stroke:#FF5978, fill:#FFDFE5, color:#8E2236
+    style A stroke:#2962FF

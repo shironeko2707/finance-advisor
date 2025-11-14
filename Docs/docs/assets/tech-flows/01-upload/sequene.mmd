@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant User
+    participant WebClient as Web Client
+    participant UploadService as Upload Service
+    participant FileStorage as File Storage (Blob)
+    participant MetadataDB as Metadata DB (PostgreSQL)
+    participant Redis as Redis (Cache)
+    participant VirusScan as Virus Scanner
+
+    User->>WebClient: Select files & click Upload
+    WebClient->>UploadService: POST /api/v1/files/upload (files)
+    UploadService->>VirusScan: Scan file(s) for malware
+    VirusScan-->>UploadService: Scan result
+    UploadService->>UploadService: Validate file type, size, structure
+    UploadService->>FileStorage: Store file(s) (S3/Blob)
+    UploadService->>MetadataDB: Save file metadata
+    UploadService->>Redis: Track upload progress (optional)
+    UploadService-->>WebClient: Return upload status, fileId(s)
+    WebClient-->>User: Show upload result, progress, errors
+    UploadService->>MetadataDB: Log upload event (audit)
+    UploadService->>Redis: Add file to AI processing queue
+    Note over UploadService,FileStorage: On error: respond with error, log event, clean up temp files

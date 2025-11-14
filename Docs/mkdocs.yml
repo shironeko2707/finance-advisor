@@ -1,0 +1,110 @@
+site_name: Khengleong Documentation
+site_description: Tài liệu nghiệp vụ, kiến trúc và thiết kế cho dự án Khengleong
+site_author: Khengleong Team
+site_url: https://10.22.14.6:8080/docs-app
+
+# Repository
+repo_name: Khengleong-docs
+repo_url: https://github.com/Khengleong-team/Khengleong-docs
+
+# Copyright
+copyright: Copyright &copy; 2024 Khengleong Team
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+
+# Plugins
+plugins:
+  - search:
+      lang: en
+  - git-revision-date-localized:
+      fallback_to_build_date: true
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+  - tables
+  - attr_list
+  - md_in_html
+
+# Page tree
+nav:
+  - Home: index.md
+  - Requirements: 
+    - Overview: requirements/index.md
+    - \--- Business Requirements: requirements/brd.md
+    - \--- Backlog: requirements/backlog.md
+  - User Flows:
+    - Overview: user-flows/index.md
+    - \--- Document Upload: user-flows/01-document-upload-flow.md
+    - \--- Output Export: user-flows/02-template-selection-flow.md
+    - \--- Template management: user-flows/03-template-management-flow.md
+    - \--- Output management: user-flows/04-preview-download-flow.md
+    - \--- Error handling: user-flows/05-error-handling-flow.md
+  - Architecture:
+    - Overview: architecture/index.md
+    - \--- High level architecture: architecture/01-system-architecture.md
+    - \--- Database design: architecture/02-database-design.md
+    - \--- API specification: architecture/api-specifications.md
+    - \--- Deployment guide: architecture/deployment-guide.md
+    - \--- Operation guide: architecture/executive-summary.md
+  - Technical Flow:
+    - Overview: tech-flows/index.md
+    - \--- Upload file: tech-flows/01-upload-file.md
+    - \--- AI extract: tech-flows/02-ai-extract.md
+    - \--- Chunking: tech-flows/03-chunking.md
+    - \--- Search: tech-flows/04-search.md
+    - \--- Results cache: tech-flows/05-results-cache.md
+  - Decision Record:
+    - Overview: decision-record/index.md
+    - \--- Architecture Fabric: decision-record/01-architecture-fabric.md
+    - \--- Backend Stack: decision-record/02-backend-stack.md
+    - \--- Backing Service: decision-record/03-backing-service.md
+    - \--- Frontend Stack: decision-record/04-frontend-stack.md
+
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Khengleong-team
+  generator: false
+
+extra_css:
+  - assets/extra.css

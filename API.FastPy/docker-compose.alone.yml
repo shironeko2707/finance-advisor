@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  lengkeng-api:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      # Mount storage directory for stateful data
+      - ./storage:/app/storage
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8080 || exit 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # No depends_on - this allows the app to run independently
+    # and connect to existing PostgreSQL/RabbitMQ instances

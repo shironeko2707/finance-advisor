@@ -1,0 +1,4 @@
+/* Tăng chiều rộng tối đa của main content */
+.md-grid {
+    min-width: 1666px !important;
+  }

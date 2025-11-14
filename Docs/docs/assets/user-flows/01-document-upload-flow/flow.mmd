@@ -1,0 +1,56 @@
+---
+config:
+  look: handDrawn
+  layout: fixed
+---
+flowchart TD
+    A["User on Dashboard"] --> B["Click Upload Documents"]
+    B --> C["Upload Interface Displayed"]
+    C --> D["User Selects Files"]
+    D --> E{"File Validation"}
+    E -- Valid Files --> F["Display File List with Details"]
+    E -- Invalid Files --> G["Show Validation Errors"]
+    G --> H["User Corrects/Replaces Files"]
+    H --> E
+    F --> I["User Confirms Upload"]
+    I --> J["Start Upload Process"]
+    J --> K["Progress Indicator Shown"]
+    K --> L["File Upload Complete"]
+    L --> M["Security Scan & Virus Check"]
+    M --> N{"Security Check Result"}
+    N -- Pass --> O["Files Stored Securely"]
+    N -- Fail --> P["Security Error Message"]
+    O --> Q["AI Processing Queue"]
+    Q --> R["Log Upload Activity"]
+    R --> S["Redirect to Template Selection"]
+    P --> T["User Notified of Security Issue"]
+    T --> U["Files Quarantined/Deleted"]
+    U --> C
+    J -. Network Error .-> V["Upload Failed Message"]
+    M -. Processing Error .-> W["System Error Message"]
+    V --> C
+    W --> C
+     A:::userAction
+     B:::userAction
+     D:::userAction
+     E:::validation
+     G:::error
+     I:::userAction
+     J:::systemProcess
+     K:::systemProcess
+     L:::systemProcess
+     M:::systemProcess
+     N:::validation
+     O:::systemProcess
+     P:::error
+     Q:::systemProcess
+     R:::systemProcess
+     S:::success
+     T:::error
+     V:::error
+     W:::error
+    classDef userAction fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef systemProcess fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef validation fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef success fill:#e8f5e8,stroke:#388e3c,stroke-width:2px

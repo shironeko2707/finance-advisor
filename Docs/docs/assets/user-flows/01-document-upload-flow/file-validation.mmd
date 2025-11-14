@@ -1,0 +1,23 @@
+---
+config:
+  layout: fixed
+  look: handDrawn
+---
+flowchart TB
+    A["File Selected"] --> B{"Check Extension"}
+    B -- ".pdf" --> C["PDF Validation"]
+    B -- ".xlsx/.xls" --> D["Excel Validation"]
+    B -- Other --> E["Reject File"]
+    C --> F{"PDF Structure OK?"}
+    D --> G{"Excel Structure OK?"}
+    F -- Yes --> H["Accept File"]
+    F -- No --> I["Reject - Corrupted PDF"]
+    G -- Yes --> H
+    G -- No --> J["Reject - Corrupted Excel"]
+    E --> K["Show Error Message"]
+    I --> K
+    J --> K
+     B:::Rose
+     F:::Rose
+     G:::Rose
+    classDef Rose stroke-width:1px, stroke-dasharray:none, stroke:#FF5978, fill:#FFDFE5, color:#8E2236
