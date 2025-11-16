@@ -1,19 +1,78 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
+from contextlib import asynccontextmanager
+
 from config.database import engine, Base
 from module.user_mgmt.user_controller import router as user_router
 from module.user_auth.auth_controller import router as auth_router
 from module.file_upload import router as file_upload_router
 from module.report.generatedreport_controller import router as generated_report_router
 from module.template.template_controller import router as template_router
+from module.prediction.prediction_controller import router as prediction_router
+from module.prediction import start_prediction_consumer_background, get_prediction_consumer
 
 # for running directly with `python main.py`, using python-dotenv to load .env.local to GLOBAL VARIABLE
 # from dotenv import load_dotenv
 # load_dotenv('.env.local')
 
+# Import prediction models to register them with SQLAlchemy
+from module.prediction.PredictionModel import (
+    PredictionRequest,
+    StockPrediction,
+    PortfolioAnalysis,
+    Recommendation,
+    MarketRegime
+)
+
 # Create all tables - CODE FIRST APPROACH
 Base.metadata.create_all(bind=engine)
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan manager.
+    Handles startup and shutdown events.
+    """
+    # Startup
+    logger.info("=" * 60)
+    logger.info("Starting up KhengLeong Smart Report Generator API...")
+    logger.info("=" * 60)
+
+    # Start Qlib prediction consumer
+    try:
+        start_prediction_consumer_background()
+        logger.info("✓ Qlib prediction consumer started successfully")
+    except Exception as e:
+        logger.error(f"✗ Failed to start prediction consumer: {e}")
+        logger.warning("⚠ Application will continue without prediction consumer")
+
+    logger.info("=" * 60)
+    logger.info("Application started successfully")
+    logger.info("=" * 60)
+
+    yield
+
+    # Shutdown
+    logger.info("=" * 60)
+    logger.info("Shutting down KhengLeong Smart Report Generator API...")
+    logger.info("=" * 60)
+
+    # Stop prediction consumer
+    try:
+        consumer = get_prediction_consumer()
+        consumer.stop_consuming()
+        logger.info("✓ Prediction consumer stopped")
+    except Exception as e:
+        logger.error(f"Error stopping prediction consumer: {e}")
+
+    logger.info("=" * 60)
+    logger.info("Application shutdown complete")
+    logger.info("=" * 60)
 
 # Initialize FastAPI app
 APP_MODE = os.getenv('APP_MODE', 'production')
@@ -28,22 +87,23 @@ app = FastAPI(
     description="""
     A comprehensive API for managing users, templates, file uploads, and AI-generated content.
     For support, contact the development team dev@khengleong.sg.
-    
+
     ## Features
     - **User Management**: Complete CRUD operations for users
     - **Authentication**: JWT-based authentication with role-based access
     - **Template Management**: Create and manage report templates
     - **File Upload**: Handle various file formats for processing
     - **AI Integration**: Generate reports and content using AI
+    - **Qlib Predictions**: Stock forecasting, portfolio analysis, and investment recommendations
     - **Storage Management**: Organized file storage with persistence
-    
+
     ## Authentication
-    
+
     ### Getting Started:
     1. Use the `/auth/login` endpoint to authenticate with username and password
     2. Include the returned JWT token in the Authorization header: `Bearer <token>`
     3. Tokens expire after 8 hours
-    
+
     ### Token Format
     ```
     Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
@@ -64,6 +124,7 @@ app = FastAPI(
     docs_url=doc_url,
     redoc_url=redoc_url,
     openapi_url="/openapi.json" if SWAGGER_ENABLED else None,
+    lifespan=lifespan,
 )
 
 # CORS Configuration, default values = false
@@ -100,6 +161,7 @@ app.include_router(user_router)
 app.include_router(file_upload_router)
 app.include_router(generated_report_router)
 app.include_router(template_router)
+app.include_router(prediction_router)
 
 # Root endpoint
 @app.get("/", tags=["Health Check"])
