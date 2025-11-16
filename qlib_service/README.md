@@ -52,26 +52,32 @@ AI Service (Extract) → RabbitMQ → Qlib Service (Predict) → RabbitMQ → Re
 ```
 qlib_service/
 ├── app/
+│   ├── main.py                  # FastAPI app & lifecycle
 │   ├── config/
 │   │   ├── settings.py          # Environment configuration
-│   │   └── qlib_config.py       # Qlib-specific config
+│   │   └── __init__.py
 │   ├── models/
 │   │   ├── schemas.py           # Pydantic models
-│   │   └── database.py          # SQLAlchemy models
+│   │   ├── database.py          # SQLAlchemy models
+│   │   └── __init__.py
 │   ├── services/
 │   │   ├── data_adapter.py      # AI data → Qlib format
 │   │   ├── forecasting.py       # Stock predictions
 │   │   ├── portfolio_analysis.py # Risk & portfolio metrics
 │   │   ├── recommendation.py    # Investment signals
-│   │   └── qlib_manager.py      # Qlib initialization
+│   │   ├── qlib_manager.py      # Qlib initialization
+│   │   └── __init__.py
 │   ├── messaging/
 │   │   ├── consumer.py          # RabbitMQ consumer
-│   │   └── publisher.py         # RabbitMQ publisher
+│   │   ├── publisher.py         # RabbitMQ publisher
+│   │   └── __init__.py
 │   ├── api/
-│   │   └── routes.py            # FastAPI endpoints
+│   │   ├── endpoints.py         # FastAPI endpoints
+│   │   └── __init__.py
 │   └── utils/
 │       ├── logger.py            # Logging setup
-│       └── helpers.py           # Utilities
+│       ├── helpers.py           # Utilities
+│       └── __init__.py
 ├── tests/                        # Unit & integration tests
 ├── qlib_data/                    # Qlib market data
 ├── models_storage/               # Trained ML models
@@ -111,6 +117,18 @@ QLIB_FEATURE_SET=alpha158
 
 ### Local Development
 
+**Option 1: Using the run script (recommended)**
+
+```bash
+# Make script executable (first time only)
+chmod +x run-dev.sh
+
+# Run the service
+./run-dev.sh
+```
+
+**Option 2: Manual setup**
+
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -124,10 +142,25 @@ cp .env.example .env
 # Edit .env with your configuration
 
 # Run the service
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload
+python -m app.main
 ```
 
 ### Docker Deployment
+
+**Option 1: Using docker-compose (recommended)**
+
+```bash
+# Start all services (Qlib, PostgreSQL, RabbitMQ)
+docker-compose up -d
+
+# View logs
+docker-compose logs -f qlib-service
+
+# Stop services
+docker-compose down
+```
+
+**Option 2: Docker standalone**
 
 ```bash
 # Build image
@@ -222,14 +255,17 @@ Stores portfolio-level risk and performance metrics.
 - [x] SQLAlchemy models (database.py)
 - [x] Data adapter (AI → Qlib conversion)
 
-### 🚧 In Progress (Phase 2)
+### ✅ Phase 2 Completed (100%)
 
-- [ ] Stock price forecasting module
-- [ ] Portfolio analysis module
-- [ ] Recommendation engine
-- [ ] FastAPI endpoints
-- [ ] RabbitMQ consumer/publisher
-- [ ] Qlib initialization & model loading
+- [x] Stock price forecasting module
+- [x] Portfolio analysis module
+- [x] Recommendation engine
+- [x] FastAPI endpoints (health, predict/stock, predict/portfolio, recommend)
+- [x] RabbitMQ consumer/publisher
+- [x] Qlib initialization & model loading
+- [x] Main FastAPI application with lifecycle management
+- [x] Docker support (Dockerfile, docker-compose.yml)
+- [x] Development scripts (run-dev.sh)
 
 ### ⏳ Pending
 

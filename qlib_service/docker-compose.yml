@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  qlib-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qlib-advisor-predictor
+    ports:
+      - "8081:8081"
+    environment:
+      - QLIB_SERVICE_HOST=0.0.0.0
+      - QLIB_SERVICE_PORT=8081
+      - SERVICE_NAME=qlib-advisor-predictor
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql://lengkeng_user:lengkeng_password@postgres:5432/lengkeng
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=rabbitmq
+      - RABBITMQ_PASSWORD=rabbitmq
+      - RABBITMQ_VHOST=/
+      - QUEUE_AI_EXTRACTION_COMPLETE=ai_extraction_complete
+      - QUEUE_QLIB_PREDICTIONS_READY=qlib_predictions_ready
+      - QUEUE_DLQ=qlib_predictions_dlq
+      - EXCHANGE_NAME=khengleong.direct
+      - QLIB_DEFAULT_MODEL=lightgbm
+      - QLIB_FORECAST_HORIZONS=1,5,30
+      - ENABLE_FORECASTING=true
+      - ENABLE_PORTFOLIO_ANALYSIS=true
+      - ENABLE_RECOMMENDATIONS=true
+      - DEBUG=false
+    volumes:
+      - qlib_data:/app/qlib_data
+      - models_storage:/app/models_storage
+    networks:
+      - khengleong-network
+    depends_on:
+      - rabbitmq
+      - postgres
+    restart: unless-stopped
+
+  # PostgreSQL Database (if not already running)
+  postgres:
+    image: postgres:17
+    container_name: khengleong-postgres
+    environment:
+      - POSTGRES_USER=lengkeng_user
+      - POSTGRES_PASSWORD=lengkeng_password
+      - POSTGRES_DB=lengkeng
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - khengleong-network
+    restart: unless-stopped
+
+  # RabbitMQ Message Queue (if not already running)
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: khengleong-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=rabbitmq
+      - RABBITMQ_DEFAULT_PASS=rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - khengleong-network
+    restart: unless-stopped
+
+volumes:
+  qlib_data:
+    driver: local
+  models_storage:
+    driver: local
+  postgres_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  khengleong-network:
+    driver: bridge
