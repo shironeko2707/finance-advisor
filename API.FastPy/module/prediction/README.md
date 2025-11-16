@@ -246,11 +246,156 @@ curl http://localhost:8080/predictions/stocks/AAPL
 
 ## Integration with Reports
 
-Predictions can be included in generated reports by:
+### Report Enhancement Features
 
-1. Querying predictions by `report_id`
-2. Formatting prediction data for Excel templates
-3. Including forecasts, analysis, and recommendations in report sections
+The prediction module includes utilities to automatically enhance generated Excel reports with prediction data:
+
+#### Components:
+
+1. **PredictionFormatter** (`prediction_formatter.py`):
+   - Formats prediction data for Excel tables
+   - Provides summary and detailed views
+   - Handles stock forecasts, portfolio analysis, recommendations, and market regime
+
+2. **PredictionReportService** (`prediction_report_service.py`):
+   - Enhances existing Excel reports with prediction sheets
+   - Adds formatted tables with color coding
+   - Creates separate worksheets for each prediction type
+
+### API Endpoints for Report Integration
+
+#### Get Formatted Predictions for Report
+
+```bash
+GET /predictions/report/{report_id}/formatted
+```
+
+Returns formatted prediction data ready for Excel/PDF inclusion:
+
+```json
+{
+  "summary": {
+    "metadata": {
+      "request_id": "req_123",
+      "model_name": "lightgbm",
+      "processing_time": "12.50s",
+      "status": "success"
+    },
+    "stock_count": 5,
+    "has_portfolio_analysis": true,
+    "recommendations_count": 5
+  },
+  "market_regime": {
+    "Market Regime": "Trending Up",
+    "Confidence": "85.5%",
+    "Description": "..."
+  },
+  "stock_predictions": [...],
+  "portfolio_analysis": {...},
+  "recommendations": [...]
+}
+```
+
+#### Enhance Report with Predictions
+
+```bash
+POST /predictions/report/{report_id}/enhance
+```
+
+Automatically adds prediction sheets to an existing Excel report:
+- **Market Regime**: Overview of current market conditions
+- **Stock Predictions**: Multi-horizon price forecasts for all stocks
+- **Recommendations**: Buy/Sell/Hold signals with rationale
+- **Portfolio Analysis**: Risk metrics and performance forecasts
+
+**Response:**
+```json
+{
+  "status": "processing",
+  "message": "Report enhancement started for report 123",
+  "report_id": 123,
+  "prediction_summary": {...}
+}
+```
+
+### Usage Examples
+
+#### Programmatic Enhancement
+
+```python
+from module.prediction.prediction_report_service import PredictionReportService
+from config.database import get_db
+
+db = next(get_db())
+service = PredictionReportService(db)
+
+# Enhance a report
+success, message = service.enhance_excel_report_with_predictions(
+    report_file_path="/path/to/report.xlsx",
+    report_id=123
+)
+
+if success:
+    print(f"Report enhanced: {message}")
+else:
+    print(f"Enhancement failed: {message}")
+```
+
+#### Getting Formatted Data
+
+```python
+# Get formatted prediction data
+prediction_data = service.get_prediction_data_for_report(report_id=123)
+
+if prediction_data:
+    # Access formatted sections
+    stocks = prediction_data["stock_predictions"]
+    portfolio = prediction_data["portfolio_analysis"]
+    recommendations = prediction_data["recommendations"]
+```
+
+#### Via API
+
+```bash
+# Get formatted predictions for a report
+curl http://localhost:8080/predictions/report/123/formatted
+
+# Enhance report with predictions (background task)
+curl -X POST http://localhost:8080/predictions/report/123/enhance
+```
+
+### Excel Report Structure
+
+After enhancement, the Excel report will contain additional sheets:
+
+1. **Market Regime** - Current market trend analysis
+2. **Stock Predictions** - Detailed forecasts with:
+   - Current prices and trends
+   - Multi-horizon predictions (1d, 5d, 30d)
+   - Confidence intervals
+   - Volatility forecasts
+
+3. **Recommendations** - Investment signals with:
+   - Buy/Sell/Hold actions (color-coded)
+   - Confidence scores
+   - Target prices and stop-loss levels
+   - Multi-factor analysis scores
+   - Detailed rationale
+
+4. **Portfolio Analysis** - Risk and performance metrics:
+   - Sharpe ratio, max drawdown, VaR
+   - Beta, alpha, volatility
+   - Expected returns (1d, 5d, 30d)
+   - Diversification score
+   - Risk level classification
+
+### Color Coding
+
+- **Buy** recommendations: Light green background
+- **Sell** recommendations: Light red background
+- **Hold** recommendations: Light yellow background
+- **Positive returns**: Green background
+- **Negative returns**: Red background
 
 ## Testing
 

@@ -1,13 +1,16 @@
 """
 API controller for prediction endpoints.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+import logging
 
 from config.database import get_db
 from .prediction_repository import PredictionRepository
 from .prediction_service import PredictionService
+from .prediction_report_service import PredictionReportService
+from .prediction_formatter import PredictionFormatter
 from .PredictionDTO import (
     PredictionResultsDTO,
     PredictionRequestListDTO,
@@ -23,6 +26,9 @@ from .PredictionDTO import (
     PerformanceForecastDTO,
     RecommendationFactorsDTO
 )
+
+# Logger
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/predictions", tags=["Predictions"])
 
@@ -322,3 +328,107 @@ def get_predictions_by_ticker(
         )
 
     return predictions
+
+
+@router.get("/report/{report_id}/formatted", response_model=Dict[str, Any])
+def get_formatted_predictions_for_report(
+    report_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get formatted prediction data for a report (Excel/PDF ready).
+
+    Args:
+        report_id: Report ID
+        db: Database session
+
+    Returns:
+        Formatted prediction data with summary, stocks, portfolio, recommendations
+    """
+    report_service = PredictionReportService(db)
+
+    prediction_data = report_service.get_prediction_data_for_report(report_id)
+
+    if not prediction_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No predictions found for report ID: {report_id}"
+        )
+
+    return prediction_data
+
+
+@router.post("/report/{report_id}/enhance")
+def enhance_report_with_predictions(
+    report_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Enhance an existing Excel report with prediction data.
+
+    This endpoint adds new sheets to the Excel report containing:
+    - Market regime analysis
+    - Stock price forecasts
+    - Investment recommendations
+    - Portfolio analysis
+
+    Args:
+        report_id: Report ID to enhance
+        background_tasks: FastAPI background tasks
+        db: Database session
+
+    Returns:
+        Status message
+    """
+    from module.report.GeneratedReportModel import GeneratedReport
+
+    # Get report
+    report = db.query(GeneratedReport).filter(GeneratedReport.id == report_id).first()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Report not found: {report_id}"
+        )
+
+    # Check if it's an Excel file
+    if not report.report_file_path.endswith(('.xlsx', '.xls')):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Only Excel reports can be enhanced with predictions"
+        )
+
+    # Check if prediction data exists
+    report_service = PredictionReportService(db)
+    prediction_data = report_service.get_prediction_data_for_report(report_id)
+
+    if not prediction_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No prediction data available for this report"
+        )
+
+    # Enhance report in background
+    def enhance_task():
+        from config.database import SessionLocal
+        task_db = SessionLocal()
+        try:
+            task_service = PredictionReportService(task_db)
+            success, message = task_service.enhance_excel_report_with_predictions(
+                report_file_path=report.report_file_path,
+                report_id=report_id
+            )
+            if not success:
+                logger.error(f"Failed to enhance report {report_id}: {message}")
+        finally:
+            task_db.close()
+
+    background_tasks.add_task(enhance_task)
+
+    return {
+        "status": "processing",
+        "message": f"Report enhancement started for report {report_id}",
+        "report_id": report_id,
+        "prediction_summary": prediction_data["summary"]
+    }
