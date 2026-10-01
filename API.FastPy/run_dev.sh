@@ -95,40 +95,33 @@ expand_variables() {
 # Load environment variables from .env.local file
 if [ -f ".env.local" ]; then
     echo -e "${YELLOW}Loading environment variables from .env.local file...${NC}"
-    
-    # First pass: read all variables into an associative array
-    declare -A env_vars
+
+    # Read and export variables (Bash 3.2 compatible)
     while IFS= read -r line || [ -n "$line" ]; do
         # Remove carriage return if present (Windows line endings)
         line=${line%$'\r'}
-        
+
         # Skip empty lines and comments
         if [[ -n "$line" && ! "$line" =~ ^[[:space:]]*# ]]; then
             # Check if line contains = and is a valid variable assignment
             if [[ "$line" =~ ^([A-Za-z0-9_][A-Za-z0-9_]*)=(.*)$ ]]; then
                 var_name="${BASH_REMATCH[1]}"
                 var_value="${BASH_REMATCH[2]}"
-                env_vars["$var_name"]="$var_value"
+
+                # Remove surrounding quotes if present
+                var_value="${var_value#\"}"
+                var_value="${var_value%\"}"
+                var_value="${var_value#\'}"
+                var_value="${var_value%\'}"
+
+                # Export the variable
+                export "$var_name"="$var_value"
+                echo -e "  ${NC}$var_name = $var_value"
             fi
         fi
     done < .env.local
-    
-    # Second pass: expand variables and export
-    for var_name in "${!env_vars[@]}"; do
-        var_value="${env_vars[$var_name]}"
-        
-        # Set the variable first so it's available for expansion
-        export "$var_name"="$var_value"
-        
-        # Expand variables in the value
-        expanded_value=$(expand_variables "$var_value")
-        
-        # Export the expanded value
-        export "$var_name"="$expanded_value"
-        echo -e "  ${NC}$var_name = $expanded_value"
-    done
 else
-    echo -e "${YELLOW}Warning: .env file not found. Using default values.${NC}"
+    echo -e "${YELLOW}Warning: .env.local file not found. Using default values.${NC}"
     export ALLOW_CORS_LOCAL="true"
     export IS_PRODUCTION="false"
 fi

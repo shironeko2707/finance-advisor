@@ -21,8 +21,9 @@ from app.config.settings import settings
 class RecommendationEngine:
     """Engine for generating investment recommendations."""
 
-    def __init__(self):
+    def __init__(self, qlib_manager=None):
         """Initialize the recommendation engine."""
+        self.qlib_manager = qlib_manager
         logger.info("Initialized RecommendationEngine")
 
     async def generate_recommendations(
@@ -566,3 +567,7 @@ class RecommendationEngine:
                 confidence=0.5,
                 description="Unable to determine market regime"
             )
+
+
+# Alias for compatibility
+RecommendationService = RecommendationEngine

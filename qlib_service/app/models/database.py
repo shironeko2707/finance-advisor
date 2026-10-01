@@ -66,7 +66,7 @@ class RecommendationRecord(Base):
 
     __table_args__ = (
         Index('idx_ticker_action', 'ticker', 'action'),
-        Index('idx_request_ticker', 'request_id', 'ticker'),
+        Index('idx_recommendation_request_ticker', 'request_id', 'ticker'),
     )
 
     def __repr__(self):
@@ -99,3 +99,20 @@ class PortfolioAnalysisRecord(Base):
 
     def __repr__(self):
         return f"<PortfolioAnalysis(request_id={self.request_id})>"
+
+
+# Database engine setup
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from app.config.settings import settings
+
+# Create database engine
+engine = create_engine(
+    settings.database_url,
+    echo=settings.debug,
+    pool_pre_ping=True,
+    connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {}
+)
+
+# Create session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

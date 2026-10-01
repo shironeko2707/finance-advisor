@@ -23,8 +23,9 @@ from app.config.settings import settings
 class PortfolioAnalysisService:
     """Service for portfolio risk analysis and performance assessment."""
 
-    def __init__(self):
+    def __init__(self, qlib_manager=None):
         """Initialize the portfolio analysis service."""
+        self.qlib_manager = qlib_manager
         logger.info("Initialized PortfolioAnalysisService")
 
     async def analyze_portfolio(

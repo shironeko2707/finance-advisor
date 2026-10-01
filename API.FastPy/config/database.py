@@ -4,8 +4,8 @@ from sqlalchemy.orm import sessionmaker
 import os
 from pathlib import Path
 
-# from dotenv import load_dotenv
-# load_dotenv()  # Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 
 # Ensure storage directory exists
 storage_dir = Path("storage")

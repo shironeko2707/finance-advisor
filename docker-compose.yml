@@ -1,0 +1,290 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # RabbitMQ Message Broker
+  # ============================================================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: kl-rabbitmq
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kl-network
+
+  # ============================================================================
+  # API.FastPy - Main Backend Service
+  # ============================================================================
+  api-backend:
+    build:
+      context: ./API.FastPy
+      dockerfile: Dockerfile
+    container_name: kl-api-backend
+    ports:
+      - "8000:8080"
+    environment:
+      # App Configuration
+      IS_PRODUCTION: "false"
+      APP_MODE: development
+      SWAGGER_URL: /docs
+
+      # Database
+      DATABASE_URL: sqlite:///./storage/lengkeng.db
+
+      # CORS
+      ALLOW_CORS_LOCAL: "true"
+      CORS_ORIGINS: "*"
+      CORS_METHODS: "*"
+      CORS_HEADERS: "*"
+
+      # Security
+      JWT_SECRET_KEY: development_secret_key_change_in_production
+
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_VHOST: /
+
+      # Mock APIs for development
+      MOCK_EXTERNAL_API: "true"
+    volumes:
+      - ./API.FastPy/storage:/app/storage
+      - ./API.FastPy/.env.local:/app/.env.local:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - kl-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # Qlib Service - Financial Analysis Service
+  # ============================================================================
+  qlib-service:
+    build:
+      context: ./qlib_service
+      dockerfile: Dockerfile
+    container_name: kl-qlib-service
+    ports:
+      - "8386:8386"
+    environment:
+      # Service Configuration
+      QLIB_SERVICE_HOST: 0.0.0.0
+      QLIB_SERVICE_PORT: 8386
+      SERVICE_NAME: qlib-advisor-predictor
+      LOG_LEVEL: INFO
+      DEBUG: "true"
+      RELOAD: "false"
+
+      # Database
+      DATABASE_URL: sqlite:///./storage/qlib.db
+
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: rabbitmq
+      RABBITMQ_PASSWORD: rabbitmq
+      RABBITMQ_VHOST: /
+      RABBITMQ_HEARTBEAT: 60
+
+      # Queue Names
+      QUEUE_AI_EXTRACTION_COMPLETE: ai_extraction_complete
+      QUEUE_QLIB_PREDICTIONS_READY: qlib_predictions_ready
+      QUEUE_DLQ: qlib_predictions_dlq
+
+      # Exchange
+      EXCHANGE_NAME: khengleong.direct
+      EXCHANGE_TYPE: direct
+
+      # Qlib Configuration
+      QLIB_REGION: us
+      QLIB_PROVIDER_URI: ./qlib_data/us_data
+      QLIB_DATA_DIR: ./qlib_data
+      QLIB_MODELS_DIR: ./models_storage
+      QLIB_DEFAULT_MODEL: lightgbm
+      QLIB_FORECAST_HORIZONS: "1,5,30"
+      QLIB_CACHE_MODELS: "true"
+      QLIB_FEATURE_SET: alpha158
+
+      # Performance
+      QLIB_MAX_WORKERS: 4
+      QLIB_BATCH_SIZE: 10
+      QLIB_PREDICTION_TIMEOUT: 300
+      CONSUMER_PREFETCH_COUNT: 1
+
+      # Features
+      ENABLE_FORECASTING: "true"
+      ENABLE_PORTFOLIO_ANALYSIS: "true"
+      ENABLE_RECOMMENDATIONS: "true"
+      ENABLE_BACKTESTING: "false"
+
+      # Monitoring
+      ENABLE_METRICS: "true"
+      METRICS_PORT: 9090
+
+      # Security
+      API_KEY_ENABLED: "false"
+    volumes:
+      - ./qlib_service/storage:/app/storage
+      - ./qlib_service/qlib_data:/app/qlib_data
+      - ./qlib_service/models_storage:/app/models_storage
+      - ./qlib_service/logs:/app/logs
+      - ./qlib_service/.env.local:/app/.env.local:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8386/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - kl-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # AI API - Document Processing & RAG Service
+  # ============================================================================
+  ai-api:
+    build:
+      context: ./ai_api
+      dockerfile: Dockerfile
+    container_name: kl-ai-api
+    environment:
+      # LLM Provider Configuration
+      LLM_PROVIDERS: ${LLM_PROVIDERS:-gemini}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-1.0}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-4096}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+
+      # Google Gemini
+      GEMINI_MODEL_NAME: ${GEMINI_MODEL_NAME:-gemini-2.0-flash-exp}
+      GOOGLE_LLM_API_KEY: ${GOOGLE_LLM_API_KEY:-}
+      GOOGLE_LLM_API_KEY_1: ${GOOGLE_LLM_API_KEY_1:-}
+      GOOGLE_LLM_API_KEY_2: ${GOOGLE_LLM_API_KEY_2:-}
+      GOOGLE_LLM_API_KEY_3: ${GOOGLE_LLM_API_KEY_3:-}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-models/text-embedding-004}
+
+      # Anthropic Claude
+      CLAUDE_MODEL_NAME: ${CLAUDE_MODEL_NAME:-claude-sonnet-4-20250514}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      CLAUDE_API_KEY_1: ${CLAUDE_API_KEY_1:-}
+      CLAUDE_API_KEY_2: ${CLAUDE_API_KEY_2:-}
+
+      # Azure OpenAI
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      OPENAI_API_VERSION: ${OPENAI_API_VERSION:-2024-02-15-preview}
+      AZURE_LLM_DEPLOYMENT: ${AZURE_LLM_DEPLOYMENT:-gpt-4}
+      AZURE_OPENAI_ENDPOINT_2: ${AZURE_OPENAI_ENDPOINT_2:-}
+      AZURE_OPENAI_API_KEY_2: ${AZURE_OPENAI_API_KEY_2:-}
+      OPENAI_API_VERSION_2: ${OPENAI_API_VERSION_2:-2024-02-15-preview}
+      AZURE_LLM_DEPLOYMENT_2: ${AZURE_LLM_DEPLOYMENT_2:-gpt-4}
+
+      # Embedding Provider
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-azure_openai}
+      AZURE_EMBEDDING_DEPLOYMENT: ${AZURE_EMBEDDING_DEPLOYMENT:-text-embedding-3-large}
+      AZURE_EMBEDDING_DIMS: ${AZURE_EMBEDDING_DIMS:-3072}
+
+      # Document Intelligence
+      DOCUMENT_INTELLIGENT_ENDPOINT: ${DOCUMENT_INTELLIGENT_ENDPOINT:-}
+      DOCUMENT_INTELLIGENT_API_KEY: ${DOCUMENT_INTELLIGENT_API_KEY:-}
+      EXTRACTOR_MAX_WORKERS: ${EXTRACTOR_MAX_WORKERS:-32}
+
+      # Azure AI Search
+      AZURE_SEARCH_ENDPOINT: ${AZURE_SEARCH_ENDPOINT:-}
+      AZURE_SEARCH_API_KEY: ${AZURE_SEARCH_API_KEY:-}
+
+      # Azure Storage
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-}
+
+      # Milvus
+      MILVUS_URI: ${MILVUS_URI:-http://localhost:19530}
+      MILVUS_API_KEY: ${MILVUS_API_KEY:-}
+      MILVUS_TOKEN: ${MILVUS_TOKEN:-}
+      MILVUS_COLLECTION_NAME: ${MILVUS_COLLECTION_NAME:-kl_auto_report}
+
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: rabbitmq
+      RABBITMQ_PASSWORD: rabbitmq
+      RABBITMQ_VHOST: /
+
+      # MySQL (optional)
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456a}
+      MYSQL_HOST: ${MYSQL_HOST:-localhost}
+      MYSQL_PORT: ${MYSQL_PORT:-3307}
+      MYSQL_DB: ${MYSQL_DB:-testdb}
+    volumes:
+      - ./ai_api/.env:/app/.env:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - kl-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # UI.ReactJS - Frontend Application
+  # ============================================================================
+  ui-frontend:
+    build:
+      context: ./UI.ReactJS
+      dockerfile: Dockerfile
+    container_name: kl-ui-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # API Configuration
+      VITE_API_BASE_URL: http://localhost:8000
+      VITE_AUTH_BASE_URL: http://localhost:8000
+      VITE_FILE_BASE_URL: http://localhost:8888
+      VITE_MODE: development
+      VITE_USE_MOCK_AUTH: "false"
+    volumes:
+      - ./UI.ReactJS/.env.local:/app/.env.local:ro
+    depends_on:
+      - api-backend
+    networks:
+      - kl-network
+    restart: unless-stopped
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  kl-network:
+    driver: bridge
+    name: khengleong-network
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  rabbitmq_data:
+    driver: local
+    name: kl-rabbitmq-data

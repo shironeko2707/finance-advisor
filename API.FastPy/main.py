@@ -9,8 +9,8 @@ from module.report.generatedreport_controller import router as generated_report_
 from module.template.template_controller import router as template_router
 
 # for running directly with `python main.py`, using python-dotenv to load .env.local to GLOBAL VARIABLE
-# from dotenv import load_dotenv
-# load_dotenv('.env.local')
+from dotenv import load_dotenv
+load_dotenv('.env.local')
 
 # Create all tables - CODE FIRST APPROACH
 Base.metadata.create_all(bind=engine)
@@ -20,8 +20,9 @@ APP_MODE = os.getenv('APP_MODE', 'production')
 SWAGGER_ENABLED = APP_MODE == 'development'
 SWAGGER_URL = os.getenv('SWAGGER_URL', '/docs')
 
-doc_url = None if not SWAGGER_ENABLED else SWAGGER_URL + "/api"
-redoc_url = None if not SWAGGER_ENABLED else SWAGGER_URL
+# Use standard FastAPI documentation URLs
+doc_url = None if not SWAGGER_ENABLED else SWAGGER_URL
+redoc_url = None if not SWAGGER_ENABLED else SWAGGER_URL.replace('/docs', '/redoc').replace('/swagger', '/redoc')
 
 app = FastAPI(
     title="KhengLeong Smart Report Generator API",

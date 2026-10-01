@@ -20,8 +20,9 @@ from app.config.settings import settings
 class ForecastingService:
     """Service for stock price forecasting using Qlib."""
 
-    def __init__(self):
+    def __init__(self, qlib_manager=None):
         """Initialize the forecasting service."""
+        self.qlib_manager = qlib_manager
         self.model_name = settings.qlib_default_model
         self.horizons = settings.forecast_horizons_list
         self.feature_set = settings.qlib_feature_set

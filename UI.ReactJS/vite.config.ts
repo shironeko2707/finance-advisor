@@ -7,6 +7,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 3000,
     allowedHosts: ['lengkeng-dev.hocai.fun'],
     hmr: {
       port: 5173,

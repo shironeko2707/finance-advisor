@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     # Database Configuration
-    database_url: str = Field(..., alias="DATABASE_URL")
+    database_url: str = Field(default="sqlite:///./storage/qlib.db", alias="DATABASE_URL")
 
     # RabbitMQ Configuration
     rabbitmq_host: str = Field(default="rabbitmq", alias="RABBITMQ_HOST")
@@ -82,9 +82,10 @@ class Settings(BaseSettings):
     reload: bool = Field(default=False, alias="RELOAD")
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.local"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"
 
     @property
     def rabbitmq_url(self) -> str:
